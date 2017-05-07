@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 import json
 from slacker import Slacker
 import datetime
+import time
 
-slack = Slacker('xoxp-179782686228-179782686244-179174111329-ee520d7b9c4bd85e4a3c4eed4fa87beb')
+slack = Slacker('xoxp-179782686228-179782686244-179141781920-8ba5055fbb14d78667f4af8936edfd68')
 app = Flask(__name__)
 filters = set()
 weightage = {}
@@ -12,7 +13,8 @@ messages = []
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    # return 'Hello World!'
+    return redirect('/show/0')
 
 
 @app.route('/busy',methods=['POST'])
@@ -60,11 +62,26 @@ def set_topic(topic,level):
     # print(request.args)#, repr(level), topic)
     return 'Ok'
 
-@app.route('/tell/rules')
-def tell_rules():
+
+@app.route('/tell/<int:level>')
+def tell_level(level):
+    filtered = filter_messages(level)
+    res = []
+    for fm in filtered:
+        res_item = {}
+        res_item['from'] = 'User '+ fm['user']
+        res_item['message'] = fm['message']
+        res_item['channel'] = fm['channel']
+        # res_item['time'] = datetime.timenow().replace(microsecond=0) - time.strptime('%Y-%m-%d %H:%M:%S')
+        res.append(res_item)
+    return jsonify(res)
+
+
+@app.route('/describe/rules')
+def describe_rules():
     return jsonify(weightage)
 
-@app.route('/show/<int:level>')
+
 def filter_messages(level):
     filtered = []
     for message in messages:
@@ -73,7 +90,15 @@ def filter_messages(level):
         print(key,value)
         if value >= level:
             filtered.append(message)
+    return filtered
+
+
+@app.route('/show/<int:level>')
+def show_messages(level):
+    filtered = filter_messages(level)
     return render_template('dashboard.html', response=filtered)
+
+
 
 def compute_levels(message):
     weight = 0
