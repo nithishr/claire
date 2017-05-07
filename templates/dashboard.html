@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Claire</title>
+    <meta charset="utf-8">
+    <meta http-equiv="refresh" content="25"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/stylesheet.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+{% for message in response %}
+<div class="col-sm">
+            <div id="tb-testimonial" class="testimonial testimonial-danger-filled">
+                <div class="testimonial-section">
+                    {{ message.message }}
+                </div>
+                <div class="testimonial-desc">
+{#                    {{ message.message }}#}
+                    <img src={{ message.pic }} alt="" />
+                    <div class="testimonial-writer">
+                    	<div class="testimonial-writer-name">{{ message.user }}</div>
+                    	<div class="testimonial-writer-designation">{{ message.time }}</div>
+                    	<a class="testimonial-writer-company"><b>{{ message.channel }}</b></a>
+                    </div>
+                </div>
+            </div>
+</div>
+{% endfor %}
+{#{% for message in response %}#}
+{#    Message: {{ message.message }} Level {{ message.level }}<br>#}
+{#{% endfor %}#}
+</body>
+</html>
