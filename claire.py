@@ -1,21 +1,39 @@
-from flask import Flask, request, jsonify, render_template, redirect
+from flask import Flask, request, jsonify, render_template, redirect, current_app
+import flask
 import json
 from slacker import Slacker
 import datetime
-import time
+import os
 
-slack = Slacker('xoxp-179782686228-179782686244-179141781920-8ba5055fbb14d78667f4af8936edfd68')
+slack = Slacker(os.getenv('SLACK_KEY'))
 app = Flask(__name__)
 filters = set()
 weightage = {}
 messages = []
+TYPES_MAPPING = {
+        'everything': 0,
+        'not important': 1,
+        'worth checking': 5,
+        'important': 7,
+        'urgent': 9
+    }
+TYPES_MAPPING_REV = {
+        0 :'everything',
+        1 :'not important',
+        5 :'worth checking',
+        7 :'important',
+        9 :'urgent'
+    }
 
 
-@app.route('/')
-def hello_world():
+# @app.route('/')
+# def hello_world():
     # return 'Hello World!'
-    return redirect('/show/0')
+    # return redirect('/show/0')
 
+# @app.before_request
+# def before_request():
+#     flask.g.level = 0
 
 @app.route('/busy',methods=['POST'])
 def test_conn():
@@ -42,11 +60,15 @@ def test_event():
             channel = slack.channels.info(channel_id).body['channel']['name']
         else:
             channel = 'Direct Message'
-        messages.append({'message':message,'user':user_profile,'pic':user_pic_url, 'time':time,'level':compute_levels(message), 'channel':channel})
+        level = compute_levels(message)
+        if level >= 7 and current_app.level < level:
+            slack.chat.post_message(channel=channel_id, text='Sorry I am pretty busy right now. I will get back to you shortly.')
+
+        messages.append({'message':message,'user':user_profile,'pic':user_pic_url, 'time':time,'level':level, 'channel':channel})
         # messages[message] = compute_levels(message)
         print(messages)#,user_profile,user_pic_url,timestamp)
-    except:
-        pass
+    except Exception as e:
+        print(repr(e))
     return 'Ok'
     # return in_req['event']['text']
     # return jsonify({'challenge':in_req['challenge']})
@@ -77,7 +99,7 @@ def tell_level(level):
     return jsonify(res)
 
 
-@app.route('/describe/rules')
+@app.route('/describe')
 def describe_rules():
     return jsonify(weightage)
 
@@ -93,12 +115,26 @@ def filter_messages(level):
     return filtered
 
 
-@app.route('/show/<int:level>')
-def show_messages(level):
+@app.route('/')
+def show_messages():
+    # level = flask.g.get('level', 0)
+    try:
+        level = current_app.level
+        # level = flask.g.get('level',0)
+    except Exception as e:
+        print(repr(e))
+        current_app.level = 0
+        level = 0
     filtered = filter_messages(level)
-    return render_template('dashboard.html', response=filtered)
+    return render_template('dashboard.html', response=filtered, heading=TYPES_MAPPING_REV[level])
 
 
+@app.route('/show/<int:level>')
+def showAlexa(level):
+    # flask.g.level=level
+    current_app.level = level
+    return 'Ok'
+    # return redirect('/showAlexa/{0}'.format(level))
 
 def compute_levels(message):
     weight = 0
